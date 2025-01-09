@@ -1,0 +1,129 @@
+To perform **Task 1: Data Merging** effectively, here are the steps you can follow:
+
+### **1. Load and Combine All CSV Files:**
+
+First, you'll need to load the 64 CSV files into a single DataFrame. If the files are stored in a directory, you can use Python's `pandas` and `glob` libraries to read them in a loop.
+
+```python
+import pandas as pd
+import glob
+
+# Define the path to your CSV files
+file_path = 'path_to_your_csv_files/*.csv'
+
+# Use glob to get all CSV files in the folder
+all_files = glob.glob(file_path)
+
+# Load all CSV files and concatenate them into one DataFrame
+df_list = [pd.read_csv(file) for file in all_files]
+combined_df = pd.concat(df_list, ignore_index=True)
+```
+
+### **2. Address Data Consistency Issues:**
+
+Once the data is combined, check for and address issues such as:
+
+- **Inconsistent Column Names:**  
+   Ensure all columns across the files are named consistently. If column names differ, standardize them.
+
+```python
+# Standardize column names if necessary (e.g., 'property_id' may differ across files)
+combined_df.columns = combined_df.columns.str.strip().str.lower().str.replace(' ', '_')
+```
+
+- **Duplicate Rows:**  
+   Check for any duplicate rows and drop them.
+
+```python
+# Remove duplicate rows
+combined_df = combined_df.drop_duplicates()
+```
+
+- **Missing Values:**  
+   Identify columns with missing values and decide how to handle them (e.g., drop or impute missing data).
+
+```python
+# Check for missing values in each column
+missing_values = combined_df.isnull().sum()
+
+# Handle missing values (example: filling NaN with a placeholder or median)
+combined_df.fillna({'column_name': 'default_value'}, inplace=True)
+```
+
+- **Data Type Consistency:**  
+   Ensure the data types of each column are consistent across the merged dataset (e.g., numerical columns should have numeric types).
+
+```python
+# Ensure proper data types
+combined_df['property_id'] = combined_df['property_id'].astype(int)
+combined_df['rent'] = combined_df['rent'].astype(float)
+```
+
+### **3. Verify and Clean Up Formatting:**
+
+Check for:
+
+- **Extra Whitespace:**  
+   Strip any extra whitespace from string columns.
+
+```python
+# Strip extra whitespaces from string columns
+combined_df = combined_df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
+```
+
+- **Standardizing Formats (e.g., Dates, Currencies):**  
+   Convert any dates to a standard format, and ensure currency values are consistent.
+
+```python
+# Convert dates to datetime format
+combined_df['activation_date'] = pd.to_datetime(combined_df['activation_date'], errors='coerce')
+
+# If there's any currency formatting, ensure it's consistent (e.g., removing currency symbols)
+combined_df['rent'] = combined_df['rent'].replace({'₹': '', ',': ''}, regex=True).astype(float)
+```
+
+### **4. Check for Valid Columns:**
+
+Verify that all necessary columns are present and ensure that irrelevant or invalid columns are removed.
+
+```python
+# List of expected columns
+expected_columns = ['property_id', 'type', 'activation_date', 'bathroom', 'floor', 'total_floor', 'furnishing', 
+                    'gym', 'latitude', 'longitude', 'lease_type', 'lift', 'locality', 'parking', 'property_age',
+                    'property_size', 'swimming_pool', 'pin_code', 'rent', 'deposit', 'building_type']
+
+# Ensure all expected columns are in the DataFrame
+missing_columns = set(expected_columns) - set(combined_df.columns)
+if missing_columns:
+    print(f"Missing columns: {missing_columns}")
+
+# Remove any unnecessary columns
+combined_df.drop(columns=['column_to_drop'], inplace=True)
+```
+
+### **5. Final Check:**
+
+After cleaning and merging the data, perform a final check on the structure:
+
+- **Ensure the Shape of the Data:**  
+   Confirm that the number of rows and columns makes sense, given the number of files being merged.
+
+```python
+# Check the shape of the final merged DataFrame
+print(combined_df.shape)
+```
+
+- **Data Integrity Check:**  
+   Perform a few sanity checks to ensure data integrity (e.g., checking for invalid `property_id` values, verifying that `rent` values are positive, etc.).
+
+```python
+# Example: Check for invalid property_id or negative rent values
+invalid_property_ids = combined_df[combined_df['property_id'] <= 0]
+negative_rent = combined_df[combined_df['rent'] < 0]
+
+print(f"Invalid property IDs: {invalid_property_ids}")
+print(f"Negative rent values: {negative_rent}")
+```
+
+---
+
