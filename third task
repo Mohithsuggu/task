@@ -1,0 +1,95 @@
+For **Task 3: Feature Engineering**, we need to create the `photo_count` feature from the cleaned `photo_urls` column, and calculate the `total_interactions` for each property from the **property_interactions dataset**. Here's how you can approach these tasks:
+
+### **1. Create `photo_count` Feature 🔢:**
+Since you've already cleaned the `photo_urls` column and extracted the number of photos for each property, we now ensure the `photo_count` feature is correctly created in the main DataFrame.
+
+#### **Steps:**
+1. If the `photo_urls` column is cleaned, apply the extraction method to compute the number of photos and store it in a new column `photo_count`.
+
+```python
+# Assuming you've already cleaned the 'photo_urls' column
+# Create the photo_count column by applying the extraction function
+combined_df['photo_count'] = combined_df['photo_urls'].apply(extract_photo_count)
+```
+
+2. **Verify the `photo_count` Column:**
+   - Ensure that the `photo_count` feature was added correctly, and that it contains the expected values (i.e., the count of photos for each property).
+
+```python
+# Check the first few rows to verify the photo_count
+print(combined_df[['property_id', 'photo_count']].head())
+```
+
+---
+
+### **2. Calculate `total_interactions` 🔄 for Each Property:**
+Next, we need to calculate the **total number of interactions** for each property from the **property_interactions dataset**.
+
+#### **Steps:**
+
+1. **Load the Property Interactions Data:**
+   - We assume that the `property_interactions` dataset contains columns like `property_id` and `request_date` (timestamp of the user interactions). The task is to count the number of interactions for each property (i.e., the number of requests made for each property).
+
+```python
+# Load the property_interactions dataset
+interactions_df = pd.read_csv('path_to_property_interactions.csv')
+
+# Preview the interactions data to understand its structure
+print(interactions_df.head())
+```
+
+2. **Calculate the Total Interactions:**
+   - Group the interactions dataset by `property_id` and count the number of requests (interactions) for each property.
+
+```python
+# Group by 'property_id' and count the number of interactions for each property
+total_interactions_df = interactions_df.groupby('property_id').size().reset_index(name='total_interactions')
+
+# Check the first few rows to verify the total_interactions calculation
+print(total_interactions_df.head())
+```
+
+3. **Merge the Total Interactions with the Main DataFrame:**
+   - After calculating the total interactions for each property, merge this information back into the main `combined_df` to link the interaction counts with the properties.
+
+```python
+# Merge the total_interactions with the main DataFrame based on property_id
+combined_df = pd.merge(combined_df, total_interactions_df, on='property_id', how='left')
+
+# Check if the total_interactions column is correctly added
+print(combined_df[['property_id', 'total_interactions']].head())
+```
+
+4. **Handle Missing Values in `total_interactions`:**
+   - Some properties might not have any interactions, which would result in `NaN` values. We can fill these `NaN` values with `0` to indicate no interactions.
+
+```python
+# Fill missing interactions with 0 for properties with no interactions
+combined_df['total_interactions'] = combined_df['total_interactions'].fillna(0).astype(int)
+
+# Verify the updated column
+print(combined_df[['property_id', 'total_interactions']].head())
+```
+
+---
+
+### **3. Final Checks and Summary:**
+1. **Verify Data Types:**
+   - Ensure that the `photo_count` and `total_interactions` columns are of the correct data type (`int`).
+
+```python
+# Check data types of important columns
+print(combined_df[['property_id', 'photo_count', 'total_interactions']].dtypes)
+```
+
+2. **Final Data Integrity Check:**
+   - Ensure that there are no negative values in `photo_count` or `total_interactions` and that the values make sense (e.g., no properties with unusually high interactions unless valid).
+
+```python
+# Check for negative values or outliers
+print(combined_df[combined_df['photo_count'] < 0])  # Check for invalid photo counts
+print(combined_df[combined_df['total_interactions'] < 0])  # Check for invalid interactions
+```
+
+---
+
