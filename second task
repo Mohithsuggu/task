@@ -1,0 +1,116 @@
+For **Task 2: Data Cleaning**, after merging all the data into a single DataFrame, here are the common challenges you may encounter and how to clean the data, specifically focusing on the `photo_urls` column:
+
+### **Common Data Cleaning Challenges 🛠️:**
+1. **Missing or Null Values**:  
+   - Missing or `NaN` values in critical columns like `photo_urls`, `property_id`, `rent`, `locality`, etc., need to be handled.
+   - These missing values can either be filled with appropriate values, dropped, or imputed based on the context.
+
+2. **Inconsistent Data Formats**:  
+   - Data columns like dates (`activation_date`), numbers (`rent`, `property_size`), and categories (`furnishing`, `lease_type`) might have inconsistent formats.
+   - This includes extra spaces, non-standard date formats, or mixed value types (e.g., numerical and categorical in the same column).
+
+3. **Duplicate Rows**:  
+   - The dataset may contain duplicate property entries after merging the CSVs. Identifying and removing these is important to avoid skewing analysis.
+
+4. **Corrupted or Invalid Data**:  
+   - The `photo_urls` column, specifically, might contain corrupted JSON-like strings or malformed data. You need to clean this data to extract meaningful information (e.g., the number of photos).
+
+### **Cleaning the `photo_urls` Column 🌐:**
+
+The `photo_urls` column likely contains corrupted JSON-like strings that need to be cleaned to extract the number of photos for each property.
+
+Here’s how you can clean and extract the `photo_count`:
+
+#### **Steps to Clean and Extract `photo_count`:**
+
+1. **Inspect the `photo_urls` Column:**
+   - Before cleaning, examine the structure of the data in the `photo_urls` column to understand how the data is stored (e.g., malformed JSON or a list of URLs).
+
+```python
+# Check the first few entries of the photo_urls column
+print(combined_df['photo_urls'].head())
+```
+
+2. **Handle Corrupted JSON or List-Like Data:**
+   - If the `photo_urls` column contains strings that look like malformed JSON, you can attempt to parse them and extract the number of URLs.
+
+```python
+import ast
+
+def extract_photo_count(photo_urls):
+    try:
+        # Attempt to convert the string to a list if it's in a corrupted JSON format
+        photo_list = ast.literal_eval(photo_urls)  # Convert string to a list
+        return len(photo_list)  # Return the number of photos
+    except (ValueError, SyntaxError, TypeError):
+        # If it's not valid, return 0 (no photos)
+        return 0
+
+# Apply this function to the photo_urls column to create the photo_count column
+combined_df['photo_count'] = combined_df['photo_urls'].apply(extract_photo_count)
+```
+
+3. **Handle Missing or Null Values in `photo_urls`:**
+   - For properties where `photo_urls` is missing or null, set the `photo_count` to 0.
+
+```python
+# Fill NaN or missing values in photo_urls with 0 photos
+combined_df['photo_count'] = combined_df['photo_count'].fillna(0)
+```
+
+4. **Verify and Clean Data Types:**
+   - Ensure the `photo_count` column is of the correct numerical type (e.g., integer).
+
+```python
+# Ensure the photo_count is of integer type
+combined_df['photo_count'] = combined_df['photo_count'].astype(int)
+```
+
+5. **Check for Inconsistencies in `photo_urls`:**
+   - After applying the cleaning function, verify that the `photo_count` reflects realistic values (e.g., not negative or excessively large).
+
+```python
+# Check for properties with negative or unusually large photo_count
+print(combined_df[combined_df['photo_count'] < 0])
+print(combined_df[combined_df['photo_count'] > 100])  # If photos > 100 is unusual
+```
+
+---
+
+### **Other Data Cleaning Steps to Consider:**
+
+1. **Handling Missing Values:**
+   - If other columns have missing or null values (e.g., `rent`, `property_size`, `furnishing`), decide on the best approach to fill or remove them. Common methods include:
+     - **Fill with a placeholder or default value** (e.g., `0` for numeric columns, `'Unknown'` for categorical).
+     - **Drop rows with critical missing data** if it’s not feasible to impute them.
+
+```python
+# Example: Fill missing rent values with median
+combined_df['rent'] = combined_df['rent'].fillna(combined_df['rent'].median())
+```
+
+2. **Ensuring Consistent Data Formats:**
+   - For date columns like `activation_date`, make sure all values are in the correct datetime format.
+   - For categorical columns like `furnishing`, ensure consistent spelling and capitalization.
+
+```python
+# Convert activation_date to datetime format
+combined_df['activation_date'] = pd.to_datetime(combined_df['activation_date'], errors='coerce')
+
+# Ensure categorical columns like 'furnishing' have consistent values
+combined_df['furnishing'] = combined_df['furnishing'].str.strip().str.lower()
+```
+
+3. **Removing Duplicate Rows:**
+   - After merging, check for duplicate property listings (e.g., multiple entries for the same `property_id`) and remove them.
+
+```python
+# Remove duplicates based on property_id
+combined_df = combined_df.drop_duplicates(subset=['property_id'])
+```
+
+---
+
+### **Conclusion:**
+After performing the above steps, your `photo_count` will be properly extracted, and the data will be cleaned for analysis. The `photo_urls` column will be converted into a more meaningful `photo_count` feature, and any missing, invalid, or duplicate data will be handled appropriately.
+
